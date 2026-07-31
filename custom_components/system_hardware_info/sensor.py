@@ -16,10 +16,25 @@ from . import SystemHardwareConfigEntry
 from .const import (
     DEFAULT_NAME,
     DOMAIN,
+    KEY_BIOS_VERSION,
+    KEY_BOARD_NAME,
+    KEY_BOARD_VENDOR,
     KEY_CPU_MODEL,
+    KEY_PRODUCT_NAME,
+    KEY_SYS_VENDOR,
     MANUFACTURER,
     SYSFS_PATHS,
 )
+
+# Explicit fallback entity names if translations aren't loaded yet
+SENSOR_NAMES: dict[str, str] = {
+    KEY_BOARD_NAME: "Motherboard",
+    KEY_BOARD_VENDOR: "Motherboard Vendor",
+    KEY_BIOS_VERSION: "Motherboard BIOS version",
+    KEY_SYS_VENDOR: "System Vendor",
+    KEY_PRODUCT_NAME: "Product Name",
+    KEY_CPU_MODEL: "CPU",
+}
 
 
 def _read_sysfs_file(path_str: str) -> str | None:
@@ -80,8 +95,8 @@ class SystemHardwareSensor(SensorEntity):
     ) -> None:
         """Initialize the sensor."""
         self._attr_translation_key = sensor_key
+        self._attr_name = SENSOR_NAMES.get(sensor_key)
 
-        # Ensures entity IDs match sensor.system_hardware_info_<sensor_key>
         normalized_key = slugify(sensor_key)
         self._attr_unique_id = f"{entry.entry_id}_{normalized_key}"
         self.entity_id = f"sensor.{DOMAIN}_{normalized_key}"
@@ -94,3 +109,4 @@ class SystemHardwareSensor(SensorEntity):
             manufacturer=MANUFACTURER,
             model=DEFAULT_NAME,
         )
+        
