@@ -116,4 +116,3 @@ class SystemHardwareSensor(SensorEntity):
     def name(self) -> str | None:
         """Return the friendly name of the individual sensor."""
         return SENSOR_NAMES.get(self._sensor_key)
-        
