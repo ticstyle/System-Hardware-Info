@@ -1,5 +1,5 @@
 {
-  "domain": "system-hardware-info",
+  "domain": "system_hardware_info",
   "name": "System Hardware Info",
   "codeowners": ["@ticstyle"],
   "config_flow": true,
