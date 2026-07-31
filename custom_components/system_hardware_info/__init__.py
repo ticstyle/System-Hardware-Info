@@ -8,7 +8,10 @@ import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
+
+from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -52,7 +55,8 @@ async def async_unload_entry(
 async def async_remove_config_entry_device(
     hass: HomeAssistant,
     config_entry: SystemHardwareConfigEntry,
-    device_entry: er.DeviceEntry,
+    device_entry: dr.DeviceEntry,
 ) -> bool:
     """Remove a device entry when deleted by the user in the UI."""
     return True
+    
