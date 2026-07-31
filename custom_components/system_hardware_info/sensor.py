@@ -16,29 +16,14 @@ from . import SystemHardwareConfigEntry
 from .const import (
     DEFAULT_NAME,
     DOMAIN,
-    KEY_BIOS_VERSION,
-    KEY_BOARD_NAME,
-    KEY_BOARD_VENDOR,
     KEY_CPU_MODEL,
-    KEY_PRODUCT_NAME,
-    KEY_SYS_VENDOR,
     MANUFACTURER,
     SYSFS_PATHS,
 )
 
-# Explicit fallback entity names if translations aren't loaded yet
-SENSOR_NAMES: dict[str, str] = {
-    KEY_BOARD_NAME: "Motherboard",
-    KEY_BOARD_VENDOR: "Motherboard Vendor",
-    KEY_BIOS_VERSION: "Motherboard BIOS version",
-    KEY_SYS_VENDOR: "System Vendor",
-    KEY_PRODUCT_NAME: "Product Name",
-    KEY_CPU_MODEL: "CPU",
-}
-
 
 def _read_sysfs_file(path_str: str) -> str | None:
-    """Safely read a single sysfs string line."""
+    """Safely read a single sysfs string line (blocking executor target)."""
     path = Path(path_str)
     if path.exists() and os.access(path, os.R_OK):
         try:
@@ -50,7 +35,7 @@ def _read_sysfs_file(path_str: str) -> str | None:
 
 
 def _get_cpu_model() -> str | None:
-    """Read CPU model name from /proc/cpuinfo."""
+    """Read CPU model name from /proc/cpuinfo (blocking executor target)."""
     cpu_path = Path("/proc/cpuinfo")
     if cpu_path.exists() and os.access(cpu_path, os.R_OK):
         try:
@@ -71,12 +56,14 @@ async def async_setup_entry(
     """Set up the System Hardware Info sensors."""
     sensors: list[SystemHardwareSensor] = []
 
-    # DMI / sysfs sensors
+    # Read sysfs files using executor to prevent event loop blocking
     for key, path in SYSFS_PATHS.items():
-        sensors.append(SystemHardwareSensor(entry, key, _read_sysfs_file(path)))
+        val = await hass.async_add_executor_job(_read_sysfs_file, path)
+        sensors.append(SystemHardwareSensor(entry, key, val))
 
-    # CPU Model sensor from /proc/cpuinfo
-    sensors.append(SystemHardwareSensor(entry, KEY_CPU_MODEL, _get_cpu_model()))
+    # Read CPU model using executor
+    cpu_val = await hass.async_add_executor_job(_get_cpu_model)
+    sensors.append(SystemHardwareSensor(entry, KEY_CPU_MODEL, cpu_val))
 
     async_add_entities(sensors)
 
@@ -94,8 +81,8 @@ class SystemHardwareSensor(SensorEntity):
         initial_value: str | None,
     ) -> None:
         """Initialize the sensor."""
+        # Using translation_key is the preferred HA method for naming sub-entities
         self._attr_translation_key = sensor_key
-        self._attr_name = SENSOR_NAMES.get(sensor_key)
 
         normalized_key = slugify(sensor_key)
         self._attr_unique_id = f"{entry.entry_id}_{normalized_key}"
