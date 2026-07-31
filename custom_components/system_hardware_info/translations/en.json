@@ -1,0 +1,39 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "System Hardware Info",
+        "description": "Do you want to set up the System Hardware Info integration?"
+      },
+      "reconfigure": {
+        "title": "Reconfigure System Hardware Info",
+        "description": "Reconfigure the System Hardware Info integration."
+      }
+    },
+    "abort": {
+      "already_configured": "System Hardware Info is already configured."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "board_name": {
+        "name": "Motherboard"
+      },
+      "board_vendor": {
+        "name": "Motherboard Vendor"
+      },
+      "bios_version": {
+        "name": "BIOS Version"
+      },
+      "sys_vendor": {
+        "name": "System Vendor"
+      },
+      "product_name": {
+        "name": "Product Name"
+      },
+      "cpu_model": {
+        "name": "CPU Model"
+      }
+    }
+  }
+}
