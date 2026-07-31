@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <!-- Background Gradient -->
+    <radialGradient id="bgGrad" cx="50%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#1e4d8c"/>
+      <stop offset="60%" stop-color="#0a1d37"/>
+      <stop offset="100%" stop-color="#050d1a"/>
+    </radialGradient>
+    
+    <!-- Outer Ring Gradient -->
+    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2a6bc2"/>
+      <stop offset="100%" stop-color="#081426"/>
+    </linearGradient>
+
+    <!-- Chip Gradient -->
+    <linearGradient id="chipGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2c3645"/>
+      <stop offset="100%" stop-color="#18202b"/>
+    </linearGradient>
+
+    <!-- Subtle Drop Shadow -->
+    <filter id="dropShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <!-- Base App Background Ring -->
+  <circle cx="256" cy="256" r="240" fill="url(#ringGrad)" />
+  <circle cx="256" cy="256" r="226" fill="url(#bgGrad)" />
+  <circle cx="256" cy="256" r="220" fill="none" stroke="#255fa3" stroke-width="3" opacity="0.6" />
+
+  <!-- PCB Circuit Traces -->
+  <g opacity="0.9" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Blue Glow Lines -->
+    <path d="M 226 166 L 226 110 M 256 166 L 256 90 M 286 166 L 286 110 M 346 226 L 402 226 M 346 256 L 422 256 M 346 286 L 402 286 M 286 346 L 286 402 M 256 346 L 256 422 M 226 346 L 226 402 M 166 286 L 110 286 M 166 256 L 90 256 M 166 226 L 110 226" 
+          stroke="#00b0ff" stroke-width="8" fill="none" filter="url(#dropShadow)" />
+    
+    <!-- Connection Dots (Blue) -->
+    <circle cx="226" cy="110" r="7" fill="#00b0ff" />
+    <circle cx="256" cy="90" r="7" fill="#00b0ff" />
+    <circle cx="286" cy="110" r="7" fill="#00b0ff" />
+    <circle cx="402" cy="226" r="7" fill="#00b0ff" />
+    <circle cx="422" cy="256" r="7" fill="#00b0ff" />
+    <circle cx="402" cy="286" r="7" fill="#00b0ff" />
+    <circle cx="286" cy="402" r="7" fill="#00b0ff" />
+    <circle cx="256" cy="422" r="7" fill="#00b0ff" />
+    <circle cx="226" cy="402" r="7" fill="#00b0ff" />
+    <circle cx="110" cy="286" r="7" fill="#00b0ff" />
+    <circle cx="90" cy="256" r="7" fill="#00b0ff" />
+    <circle cx="110" cy="226" r="7" fill="#00b0ff" />
+
+    <!-- Silver Metal Traces -->
+    <path d="M 196 166 L 196 130 L 176 110 M 316 166 L 316 130 L 336 110 M 346 196 L 382 196 L 402 176 M 346 316 L 382 316 L 402 336 M 316 346 L 316 382 L 336 402 M 196 346 L 196 382 L 176 402 M 166 316 L 130 316 L 110 336 M 166 196 L 130 196 L 110 176" 
+          stroke="#8a9ba8" stroke-width="6" fill="none" />
+    
+    <!-- Connection Dots (Silver) -->
+    <circle cx="176" cy="110" r="6" fill="#8a9ba8" />
+    <circle cx="336" cy="110" r="6" fill="#8a9ba8" />
+    <circle cx="402" cy="176" r="6" fill="#8a9ba8" />
+    <circle cx="402" cy="336" r="6" fill="#8a9ba8" />
+    <circle cx="336" cy="402" r="6" fill="#8a9ba8" />
+    <circle cx="176" cy="402" r="6" fill="#8a9ba8" />
+    <circle cx="110" cy="336" r="6" fill="#8a9ba8" />
+    <circle cx="110" cy="176" r="6" fill="#8a9ba8" />
+  </g>
+
+  <!-- Central Processor CPU Chip -->
+  <rect x="166" y="166" width="180" height="180" rx="24" ry="24" fill="url(#chipGrad)" stroke="#3e4d61" stroke-width="6" filter="url(#dropShadow)"/>
+  <rect x="196" y="196" width="120" height="120" rx="12" ry="12" fill="#121821" stroke="#253242" stroke-width="4"/>
+  
+  <!-- Glowing Core Light -->
+  <circle cx="256" cy="256" r="14" fill="#00d2ff" filter="url(#dropShadow)" />
+  <circle cx="256" cy="256" r="6" fill="#ffffff" />
+</svg>
