@@ -17,14 +17,8 @@ A modern Home Assistant custom integration that automatically reads hardware spe
 
 To add this integration, please add the custom repository `https://github.com/ticstyle/System-Hardware-Info` to HACS in your Home Assistant setup.
 
-## 🌐 Supported Languages / Språk
-The integration natively defaults to English for backend operations but includes full frontend translations for Swedish. Thanks to native State Translations, sensor names will display localized text (e.g., *Moderkort*, *BIOS-version*, *CPU-modell*) seamlessly in your UI while maintaining clean system attributes.
-
 ## ✨ Features
-* **Device-Centric Architecture:** Automatically creates a single **System Hardware Info** Device container grouping all hardware specs cleanly together (`manufacturer="ticstyle"`, `model="System Hardware Info"`).
 * **🖥️ Deep Hardware Discovery:** Safe, native parsing of Linux system interfaces (`/sys/class/dmi/id/*` and `/proc/cpuinfo`) to pull physical host specs.
-* **🏷️ Normalized Entity IDs:** All registered entities strictly start with the `sensor.system_hardware_info_` prefix for uniform entity tracking and clean automations.
-* **⚙️ UI Reconfiguration & Self-Cleaning:** Supports native UI reconfiguration steps and automatically purges orphaned entities if hardware parameters change.
 * **🔍 Built-in Diagnostics:** Complete support for Home Assistant Diagnostics (`diagnostics.py`) to quickly copy hardware summaries with safe data isolation.
 * **⚡ Zero-Impact Polling:** Reads static host specifications on initial startup without wasting background CPU cycles.
 
@@ -43,7 +37,7 @@ Add the integration via the Home Assistant User Interface. Go to **Settings -> D
 Setup is fully automatic with a zero-configuration flow. Once added, the device and all associated hardware entities are populated immediately.
 
 ## 📊 Available Entities
-Once configured, the integration automatically registers a device named **System Hardware Info** containing the following entities:
+Once configured, the integration automatically registers a device named **System Hardware Info** containing the following entities, with more coming in future releases:
 
 | Entity ID | Name in UI | State Example | Description |
 | :--- | :--- | :--- | :--- |
