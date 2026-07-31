@@ -16,12 +16,7 @@ from . import SystemHardwareConfigEntry
 from .const import (
     DEFAULT_NAME,
     DOMAIN,
-    KEY_BIOS_VERSION,
-    KEY_BOARD_NAME,
-    KEY_BOARD_VENDOR,
     KEY_CPU_MODEL,
-    KEY_PRODUCT_NAME,
-    KEY_SYS_VENDOR,
     MANUFACTURER,
     SYSFS_PATHS,
 )
@@ -85,7 +80,7 @@ class SystemHardwareSensor(SensorEntity):
     ) -> None:
         """Initialize the sensor."""
         self._attr_translation_key = sensor_key
-        
+
         # Ensures entity IDs match sensor.system_hardware_info_<sensor_key>
         normalized_key = slugify(sensor_key)
         self._attr_unique_id = f"{entry.entry_id}_{normalized_key}"
