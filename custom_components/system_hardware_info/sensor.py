@@ -26,7 +26,7 @@ from .const import (
     SYSFS_PATHS,
 )
 
-# Explicit fallback entity names if translations aren't loaded yet
+# Explicit names for each hardware attribute
 SENSOR_NAMES: dict[str, str] = {
     KEY_BOARD_NAME: "Motherboard",
     KEY_BOARD_VENDOR: "Motherboard Vendor",
@@ -38,7 +38,7 @@ SENSOR_NAMES: dict[str, str] = {
 
 
 def _read_sysfs_file(path_str: str) -> str | None:
-    """Safely read a single sysfs string line."""
+    """Safely read a single sysfs string line (blocking executor target)."""
     path = Path(path_str)
     if path.exists() and os.access(path, os.R_OK):
         try:
@@ -50,7 +50,7 @@ def _read_sysfs_file(path_str: str) -> str | None:
 
 
 def _get_cpu_model() -> str | None:
-    """Read CPU model name from /proc/cpuinfo."""
+    """Read CPU model name from /proc/cpuinfo (blocking executor target)."""
     cpu_path = Path("/proc/cpuinfo")
     if cpu_path.exists() and os.access(cpu_path, os.R_OK):
         try:
@@ -71,12 +71,14 @@ async def async_setup_entry(
     """Set up the System Hardware Info sensors."""
     sensors: list[SystemHardwareSensor] = []
 
-    # DMI / sysfs sensors
+    # Read sysfs files using executor to prevent event loop blocking
     for key, path in SYSFS_PATHS.items():
-        sensors.append(SystemHardwareSensor(entry, key, _read_sysfs_file(path)))
+        val = await hass.async_add_executor_job(_read_sysfs_file, path)
+        sensors.append(SystemHardwareSensor(entry, key, val))
 
-    # CPU Model sensor from /proc/cpuinfo
-    sensors.append(SystemHardwareSensor(entry, KEY_CPU_MODEL, _get_cpu_model()))
+    # Read CPU model using executor
+    cpu_val = await hass.async_add_executor_job(_get_cpu_model)
+    sensors.append(SystemHardwareSensor(entry, KEY_CPU_MODEL, cpu_val))
 
     async_add_entities(sensors)
 
@@ -95,7 +97,7 @@ class SystemHardwareSensor(SensorEntity):
     ) -> None:
         """Initialize the sensor."""
         self._attr_translation_key = sensor_key
-        self._attr_name = SENSOR_NAMES.get(sensor_key)
+        self._sensor_key = sensor_key
 
         normalized_key = slugify(sensor_key)
         self._attr_unique_id = f"{entry.entry_id}_{normalized_key}"
@@ -109,3 +111,9 @@ class SystemHardwareSensor(SensorEntity):
             manufacturer=MANUFACTURER,
             model=DEFAULT_NAME,
         )
+
+    @property
+    def name(self) -> str | None:
+        """Return the friendly name of the individual sensor."""
+        return SENSOR_NAMES.get(self._sensor_key)
+        
