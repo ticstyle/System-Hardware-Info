@@ -109,4 +109,3 @@ class SystemHardwareSensor(SensorEntity):
             manufacturer=MANUFACTURER,
             model=DEFAULT_NAME,
         )
-        
