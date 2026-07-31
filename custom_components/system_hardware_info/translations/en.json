@@ -23,7 +23,7 @@
         "name": "Motherboard Vendor"
       },
       "bios_version": {
-        "name": "BIOS Version"
+        "name": "Motherboard BIOS version"
       },
       "sys_vendor": {
         "name": "System Vendor"
