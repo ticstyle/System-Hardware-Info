@@ -32,7 +32,25 @@
         "name": "Product Name"
       },
       "cpu_model": {
-        "name": "CPU Model"
+        "name": "CPU"
+      },
+      "cpu_cores": {
+        "name": "CPU Cores"
+      },
+      "cpu_arch": {
+        "name": "CPU Architecture"
+      },
+      "total_ram": {
+        "name": "Total Installed RAM"
+      },
+      "hypervisor": {
+        "name": "Virtualization Host"
+      },
+      "boot_disk_model": {
+        "name": "Boot Disk Model"
+      },
+      "primary_mac": {
+        "name": "Primary MAC Address"
       }
     }
   }

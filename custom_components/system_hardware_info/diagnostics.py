@@ -3,13 +3,22 @@
 
 from __future__ import annotations
 
+import os
+import platform
 from typing import Any
 
 from homeassistant.core import HomeAssistant
 
 from . import SystemHardwareConfigEntry
 from .const import SYSFS_PATHS
-from .sensor import _get_cpu_model, _read_sysfs_file
+from .sensor import (
+    _get_boot_disk_model,
+    _get_cpu_model,
+    _get_hypervisor,
+    _get_primary_mac,
+    _get_total_ram,
+    _read_sysfs_file,
+)
 
 
 async def async_get_config_entry_diagnostics(
@@ -20,9 +29,17 @@ async def async_get_config_entry_diagnostics(
     hardware_data: dict[str, str | None] = {}
 
     for key, path in SYSFS_PATHS.items():
-        hardware_data[key] = _read_sysfs_file(path)
+        hardware_data[key] = await hass.async_add_executor_job(_read_sysfs_file, path)
 
-    hardware_data["cpu_model"] = _get_cpu_model()
+    hardware_data["cpu_model"] = await hass.async_add_executor_job(_get_cpu_model)
+    hardware_data["cpu_cores"] = str(os.cpu_count())
+    hardware_data["cpu_arch"] = platform.machine()
+    hardware_data["total_ram"] = await hass.async_add_executor_job(_get_total_ram)
+    hardware_data["hypervisor"] = await hass.async_add_executor_job(_get_hypervisor)
+    hardware_data["boot_disk_model"] = await hass.async_add_executor_job(
+        _get_boot_disk_model
+    )
+    hardware_data["primary_mac"] = await hass.async_add_executor_job(_get_primary_mac)
 
     return {
         "entry_id": entry.entry_id,
