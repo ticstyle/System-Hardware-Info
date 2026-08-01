@@ -4,8 +4,8 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
 import platform
+from pathlib import Path
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.core import HomeAssistant
@@ -17,14 +17,12 @@ from . import SystemHardwareConfigEntry
 from .const import (
     DEFAULT_NAME,
     DOMAIN,
-    KEY_BIOS_VERSION,
     KEY_BOOT_DISK,
     KEY_CPU_ARCH,
     KEY_CPU_CORES,
     KEY_CPU_MODEL,
     KEY_HYPERVISOR,
     KEY_PRIMARY_MAC,
-    KEY_PRODUCT_NAME,
     KEY_TOTAL_RAM,
     MANUFACTURER,
     SYSFS_PATHS,
@@ -187,4 +185,3 @@ class SystemHardwareSensor(SensorEntity):
             manufacturer=MANUFACTURER,
             model=DEFAULT_NAME,
         )
-        

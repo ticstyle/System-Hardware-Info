@@ -29,9 +29,7 @@ async def async_get_config_entry_diagnostics(
     hardware_data: dict[str, str | None] = {}
 
     for key, path in SYSFS_PATHS.items():
-        hardware_data[key] = await hass.async_add_executor_job(
-            _read_sysfs_file, path
-        )
+        hardware_data[key] = await hass.async_add_executor_job(_read_sysfs_file, path)
 
     hardware_data["cpu_model"] = await hass.async_add_executor_job(_get_cpu_model)
     hardware_data["cpu_cores"] = str(os.cpu_count())
@@ -48,4 +46,3 @@ async def async_get_config_entry_diagnostics(
         "domain": entry.domain,
         "hardware": hardware_data,
     }
-    
