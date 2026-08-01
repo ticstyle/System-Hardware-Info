@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+import platform
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.core import HomeAssistant
@@ -16,7 +17,15 @@ from . import SystemHardwareConfigEntry
 from .const import (
     DEFAULT_NAME,
     DOMAIN,
+    KEY_BIOS_VERSION,
+    KEY_BOOT_DISK,
+    KEY_CPU_ARCH,
+    KEY_CPU_CORES,
     KEY_CPU_MODEL,
+    KEY_HYPERVISOR,
+    KEY_PRIMARY_MAC,
+    KEY_PRODUCT_NAME,
+    KEY_TOTAL_RAM,
     MANUFACTURER,
     SYSFS_PATHS,
 )
@@ -48,6 +57,67 @@ def _get_cpu_model() -> str | None:
     return None
 
 
+def _get_total_ram() -> str | None:
+    """Calculate total physical installed RAM in GB."""
+    try:
+        pages = os.sysconf("SC_PHYS_PAGES")
+        page_size = os.sysconf("SC_PAGE_SIZE")
+        if pages > 0 and page_size > 0:
+            ram_gb = round((pages * page_size) / (1024**3), 2)
+            return f"{ram_gb} GB"
+    except (ValueError, OSError):
+        return None
+    return None
+
+
+def _get_hypervisor() -> str | None:
+    """Detect if the system is running under virtualization."""
+    hyper_path = Path("/sys/hypervisor/type")
+    if hyper_path.exists():
+        val = _read_sysfs_file(str(hyper_path))
+        if val:
+            return val.capitalize()
+
+    sys_vendor = _read_sysfs_file("/sys/class/dmi/id/sys_vendor")
+    if sys_vendor:
+        vendor_lower = sys_vendor.lower()
+        if "qemu" in vendor_lower or "kvm" in vendor_lower:
+            return "QEMU / KVM"
+        if "vmware" in vendor_lower:
+            return "VMware"
+        if "innotek" in vendor_lower or "virtualbox" in vendor_lower:
+            return "VirtualBox"
+
+    return "Bare Metal"
+
+
+def _get_boot_disk_model() -> str | None:
+    """Identify the physical boot disk model."""
+    disk_paths = [
+        "/sys/block/nvme0n1/device/model",
+        "/sys/block/sda/device/model",
+        "/sys/block/vda/device/model",
+        "/sys/block/mmcblk0/device/name",
+    ]
+    for p in disk_paths:
+        val = _read_sysfs_file(p)
+        if val:
+            return val
+    return None
+
+
+def _get_primary_mac() -> str | None:
+    """Fetch MAC address of the primary network interface."""
+    net_dir = Path("/sys/class/net")
+    if net_dir.exists():
+        for interface in ("eth0", "end0", "enp1s0"):
+            mac_path = net_dir / interface / "address"
+            val = _read_sysfs_file(str(mac_path))
+            if val:
+                return val.upper()
+    return None
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: SystemHardwareConfigEntry,
@@ -56,14 +126,36 @@ async def async_setup_entry(
     """Set up the System Hardware Info sensors."""
     sensors: list[SystemHardwareSensor] = []
 
-    # Read sysfs files using executor to prevent event loop blocking
+    # Read base sysfs files using executor
     for key, path in SYSFS_PATHS.items():
         val = await hass.async_add_executor_job(_read_sysfs_file, path)
         sensors.append(SystemHardwareSensor(entry, key, val))
 
-    # Read CPU model using executor
+    # Existing CPU Model sensor
     cpu_val = await hass.async_add_executor_job(_get_cpu_model)
     sensors.append(SystemHardwareSensor(entry, KEY_CPU_MODEL, cpu_val))
+
+    # New v1.1.0 Sensors
+    cpu_cores = os.cpu_count()
+    sensors.append(
+        SystemHardwareSensor(
+            entry, KEY_CPU_CORES, str(cpu_cores) if cpu_cores else None
+        )
+    )
+
+    sensors.append(SystemHardwareSensor(entry, KEY_CPU_ARCH, platform.machine()))
+
+    ram_val = await hass.async_add_executor_job(_get_total_ram)
+    sensors.append(SystemHardwareSensor(entry, KEY_TOTAL_RAM, ram_val))
+
+    hyp_val = await hass.async_add_executor_job(_get_hypervisor)
+    sensors.append(SystemHardwareSensor(entry, KEY_HYPERVISOR, hyp_val))
+
+    disk_val = await hass.async_add_executor_job(_get_boot_disk_model)
+    sensors.append(SystemHardwareSensor(entry, KEY_BOOT_DISK, disk_val))
+
+    mac_val = await hass.async_add_executor_job(_get_primary_mac)
+    sensors.append(SystemHardwareSensor(entry, KEY_PRIMARY_MAC, mac_val))
 
     async_add_entities(sensors)
 
@@ -81,7 +173,6 @@ class SystemHardwareSensor(SensorEntity):
         initial_value: str | None,
     ) -> None:
         """Initialize the sensor."""
-        # Using translation_key is the preferred HA method for naming sub-entities
         self._attr_translation_key = sensor_key
 
         normalized_key = slugify(sensor_key)
@@ -96,3 +187,4 @@ class SystemHardwareSensor(SensorEntity):
             manufacturer=MANUFACTURER,
             model=DEFAULT_NAME,
         )
+        
