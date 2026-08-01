@@ -11,6 +11,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 
+from .const import DOMAIN
+
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS: list[Platform] = [Platform.SENSOR]
@@ -33,6 +35,12 @@ async def async_setup_entry(
         "sys_vendor",
         "product_name",
         "cpu_model",
+        "cpu_cores",
+        "cpu_arch",
+        "total_ram",
+        "hypervisor",
+        "boot_disk_model",
+        "primary_mac",
     ]
     for entity in entries:
         if entity.unique_id.split("_")[-1] not in valid_keys:
@@ -57,3 +65,4 @@ async def async_remove_config_entry_device(
 ) -> bool:
     """Remove a device entry when deleted by the user in the UI."""
     return True
+    
