@@ -3,10 +3,10 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
 import os
-from pathlib import Path
 import platform
+from datetime import UTC, datetime
+from pathlib import Path
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.core import HomeAssistant
@@ -19,7 +19,6 @@ from .const import (
     DEFAULT_NAME,
     DOMAIN,
     KEY_BIOS_DATE,
-    KEY_BIOS_VERSION,
     KEY_BOOT_DISK,
     KEY_CPU_ARCH,
     KEY_CPU_CORES,
@@ -30,7 +29,6 @@ from .const import (
     KEY_HYPERVISOR,
     KEY_KERNEL_VERSION,
     KEY_PRIMARY_MAC,
-    KEY_PRODUCT_NAME,
     KEY_TOTAL_RAM,
     MANUFACTURER,
     SYSFS_PATHS,
@@ -215,9 +213,7 @@ async def async_setup_entry(
     sensors.append(SystemHardwareSensor(entry, KEY_CPU_MAX_FREQ, max_freq))
 
     # Kernel version
-    sensors.append(
-        SystemHardwareSensor(entry, KEY_KERNEL_VERSION, platform.release())
-    )
+    sensors.append(SystemHardwareSensor(entry, KEY_KERNEL_VERSION, platform.release()))
 
     # Core count & Architecture
     cpu_cores = os.cpu_count()

@@ -31,9 +31,7 @@ async def async_get_config_entry_diagnostics(
     hardware_data: dict[str, str | None] = {}
 
     for key, path in SYSFS_PATHS.items():
-        hardware_data[key] = await hass.async_add_executor_job(
-            _read_sysfs_file, path
-        )
+        hardware_data[key] = await hass.async_add_executor_job(_read_sysfs_file, path)
 
     cpu_model, cpu_vendor, virt_capable = await hass.async_add_executor_job(
         _get_cpu_info

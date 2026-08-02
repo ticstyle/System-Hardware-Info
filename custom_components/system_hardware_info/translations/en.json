@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "System Hardware Info",
-        "description": "Do you want to set up the System Hardware Info integration?"
+        "description": "Click **Submit** to set up System Hardware Info. This will automatically discover your host's motherboard, CPU, RAM, BIOS, and physical hardware specifications."
       },
       "reconfigure": {
         "title": "Reconfigure System Hardware Info",
