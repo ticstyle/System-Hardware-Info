@@ -3,10 +3,10 @@
 
 from __future__ import annotations
 
-import os
-import platform
 from datetime import UTC, datetime
+import os
 from pathlib import Path
+import platform
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.core import HomeAssistant
@@ -19,6 +19,7 @@ from .const import (
     DEFAULT_NAME,
     DOMAIN,
     KEY_BIOS_DATE,
+    KEY_BIOS_VERSION,
     KEY_BOOT_DISK,
     KEY_CPU_ARCH,
     KEY_CPU_CORES,
@@ -29,7 +30,9 @@ from .const import (
     KEY_HYPERVISOR,
     KEY_KERNEL_VERSION,
     KEY_PRIMARY_MAC,
+    KEY_PRODUCT_NAME,
     KEY_TOTAL_RAM,
+    KEY_USABLE_RAM,
     MANUFACTURER,
     SYSFS_PATHS,
 )
@@ -104,13 +107,29 @@ def _get_cpu_max_freq() -> str | None:
 
 
 def _get_total_ram() -> str | None:
-    """Calculate total physical installed RAM in GB."""
+    """Calculate installed physical RAM rounded to the nearest standard capacity."""
     try:
         pages = os.sysconf("SC_PHYS_PAGES")
         page_size = os.sysconf("SC_PAGE_SIZE")
         if pages > 0 and page_size > 0:
-            ram_gb = round((pages * page_size) / (1024**3), 2)
-            return f"{ram_gb} GB"
+            raw_gb = (pages * page_size) / (1024**3)
+            # Standard physical RAM module capacity sizes in GB
+            standard_capacities = [1, 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 256]
+            matched = min(standard_capacities, key=lambda x: abs(x - raw_gb))
+            return f"{matched} GB"
+    except (ValueError, OSError):
+        return None
+    return None
+
+
+def _get_usable_ram() -> str | None:
+    """Calculate usable kernel memory pages in GB."""
+    try:
+        pages = os.sysconf("SC_PHYS_PAGES")
+        page_size = os.sysconf("SC_PAGE_SIZE")
+        if pages > 0 and page_size > 0:
+            usable_gb = round((pages * page_size) / (1024**3), 2)
+            return f"{usable_gb} GB"
     except (ValueError, OSError):
         return None
     return None
@@ -213,7 +232,9 @@ async def async_setup_entry(
     sensors.append(SystemHardwareSensor(entry, KEY_CPU_MAX_FREQ, max_freq))
 
     # Kernel version
-    sensors.append(SystemHardwareSensor(entry, KEY_KERNEL_VERSION, platform.release()))
+    sensors.append(
+        SystemHardwareSensor(entry, KEY_KERNEL_VERSION, platform.release())
+    )
 
     # Core count & Architecture
     cpu_cores = os.cpu_count()
@@ -224,10 +245,14 @@ async def async_setup_entry(
     )
     sensors.append(SystemHardwareSensor(entry, KEY_CPU_ARCH, platform.machine()))
 
-    # Memory, hypervisor, disk, MAC
+    # Memory sensors
     ram_val = await hass.async_add_executor_job(_get_total_ram)
     sensors.append(SystemHardwareSensor(entry, KEY_TOTAL_RAM, ram_val))
 
+    usable_val = await hass.async_add_executor_job(_get_usable_ram)
+    sensors.append(SystemHardwareSensor(entry, KEY_USABLE_RAM, usable_val))
+
+    # Hypervisor, disk, MAC
     hyp_val = await hass.async_add_executor_job(_get_hypervisor)
     sensors.append(SystemHardwareSensor(entry, KEY_HYPERVISOR, hyp_val))
 
@@ -267,3 +292,4 @@ class SystemHardwareSensor(SensorEntity):
             manufacturer=MANUFACTURER,
             model=DEFAULT_NAME,
         )
+        
