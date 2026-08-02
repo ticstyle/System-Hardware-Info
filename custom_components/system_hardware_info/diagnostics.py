@@ -41,9 +41,7 @@ async def async_get_config_entry_diagnostics(
     hardware_data: dict[str, str | None] = {}
 
     for key, path in SYSFS_PATHS.items():
-        hardware_data[key] = await hass.async_add_executor_job(
-            _read_sysfs_file, path
-        )
+        hardware_data[key] = await hass.async_add_executor_job(_read_sysfs_file, path)
 
     cpu_model, cpu_vendor, virt_capable = await hass.async_add_executor_job(
         _get_cpu_info
@@ -66,9 +64,13 @@ async def async_get_config_entry_diagnostics(
     hardware_data["boot_disk_model"] = disk_val
     hardware_data["disk_bus_type"] = bus_val
     hardware_data["primary_mac"] = await hass.async_add_executor_job(_get_primary_mac)
-    hardware_data["pci_devices_count"] = await hass.async_add_executor_job(_get_pci_count)
+    hardware_data["pci_devices_count"] = await hass.async_add_executor_job(
+        _get_pci_count
+    )
     hardware_data["gpu_model"] = await hass.async_add_executor_job(_get_gpu_model)
-    hardware_data["system_chassis"] = await hass.async_add_executor_job(_get_chassis_type)
+    hardware_data["system_chassis"] = await hass.async_add_executor_job(
+        _get_chassis_type
+    )
 
     redacted_data = async_redact_data(hardware_data, TO_REDACT)
 
