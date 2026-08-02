@@ -51,6 +51,27 @@
       },
       "primary_mac": {
         "name": "Primary MAC Address"
+      },
+      "bios_date": {
+        "name": "BIOS Date"
+      },
+      "board_version": {
+        "name": "Motherboard Revision"
+      },
+      "cpu_vendor": {
+        "name": "CPU Vendor"
+      },
+      "cpu_max_freq": {
+        "name": "CPU Max Frequency"
+      },
+      "hardware_virt": {
+        "name": "Hardware Virtualization"
+      },
+      "product_family": {
+        "name": "Product Family"
+      },
+      "kernel_version": {
+        "name": "Kernel Version"
       }
     }
   }
