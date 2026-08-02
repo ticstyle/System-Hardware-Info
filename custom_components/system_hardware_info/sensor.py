@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 import os
 from pathlib import Path
 import platform
@@ -58,7 +58,7 @@ def _get_bios_date() -> str | None:
     # Common SMBIOS formats: MM/DD/YYYY, MM/DD/YY, YYYY-MM-DD
     for fmt in ("%m/%d/%Y", "%m/%d/%y", "%Y-%m-%d"):
         try:
-            parsed = datetime.strptime(raw_date, fmt)
+            parsed = datetime.strptime(raw_date, fmt).replace(tzinfo=UTC)
             return parsed.strftime("%Y-%m-%d")
         except ValueError:
             continue
