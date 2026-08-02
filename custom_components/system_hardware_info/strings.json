@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "System Hardware Info",
-        "description": "Do you want to set up the System Hardware Info integration?"
+        "description": "Click **Submit** to set up System Hardware Info. This will automatically discover your host's motherboard, CPU, RAM, BIOS, and physical hardware specifications."
       },
       "reconfigure": {
         "title": "Reconfigure System Hardware Info",
@@ -51,6 +51,27 @@
       },
       "primary_mac": {
         "name": "Primary MAC Address"
+      },
+      "bios_date": {
+        "name": "BIOS Date"
+      },
+      "board_version": {
+        "name": "Motherboard Revision"
+      },
+      "cpu_vendor": {
+        "name": "CPU Vendor"
+      },
+      "cpu_max_freq": {
+        "name": "CPU Max Frequency"
+      },
+      "hardware_virt": {
+        "name": "Hardware Virtualization"
+      },
+      "product_family": {
+        "name": "Product Family"
+      },
+      "kernel_version": {
+        "name": "Kernel Version"
       }
     }
   }

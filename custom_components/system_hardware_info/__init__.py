@@ -23,7 +23,6 @@ async def async_setup_entry(
     entry: SystemHardwareConfigEntry,
 ) -> bool:
     """Set up System Hardware Info from a config entry."""
-    # Purge orphaned entities if any exist from older setups
     entity_reg = er.async_get(hass)
     entries = er.async_entries_for_config_entry(entity_reg, entry.entry_id)
     valid_keys = [
@@ -39,6 +38,13 @@ async def async_setup_entry(
         "hypervisor",
         "boot_disk_model",
         "primary_mac",
+        "bios_date",
+        "board_version",
+        "cpu_vendor",
+        "cpu_max_freq",
+        "hardware_virt",
+        "product_family",
+        "kernel_version",
     ]
     for entity in entries:
         if entity.unique_id.split("_")[-1] not in valid_keys:
