@@ -3,9 +3,10 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 import os
-import platform
 from pathlib import Path
+import platform
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.core import HomeAssistant
@@ -17,12 +18,19 @@ from . import SystemHardwareConfigEntry
 from .const import (
     DEFAULT_NAME,
     DOMAIN,
+    KEY_BIOS_DATE,
+    KEY_BIOS_VERSION,
     KEY_BOOT_DISK,
     KEY_CPU_ARCH,
     KEY_CPU_CORES,
+    KEY_CPU_MAX_FREQ,
     KEY_CPU_MODEL,
+    KEY_CPU_VENDOR,
+    KEY_HARDWARE_VIRT,
     KEY_HYPERVISOR,
+    KEY_KERNEL_VERSION,
     KEY_PRIMARY_MAC,
+    KEY_PRODUCT_NAME,
     KEY_TOTAL_RAM,
     MANUFACTURER,
     SYSFS_PATHS,
@@ -41,17 +49,59 @@ def _read_sysfs_file(path_str: str) -> str | None:
     return None
 
 
-def _get_cpu_model() -> str | None:
-    """Read CPU model name from /proc/cpuinfo (blocking executor target)."""
+def _get_bios_date() -> str | None:
+    """Read BIOS release date and format strictly as YYYY-MM-DD."""
+    raw_date = _read_sysfs_file("/sys/class/dmi/id/bios_date")
+    if not raw_date:
+        return None
+
+    # Common SMBIOS formats: MM/DD/YYYY, MM/DD/YY, YYYY-MM-DD
+    for fmt in ("%m/%d/%Y", "%m/%d/%y", "%Y-%m-%d"):
+        try:
+            parsed = datetime.strptime(raw_date, fmt)
+            return parsed.strftime("%Y-%m-%d")
+        except ValueError:
+            continue
+
+    return raw_date
+
+
+def _get_cpu_info() -> tuple[str | None, str | None, str | None]:
+    """Extract model name, vendor ID, and virtualization capability from /proc/cpuinfo."""
     cpu_path = Path("/proc/cpuinfo")
+    model: str | None = None
+    vendor: str | None = None
+    virt_capable: str | None = None
+
     if cpu_path.exists() and os.access(cpu_path, os.R_OK):
         try:
             lines = cpu_path.read_text(encoding="utf-8").splitlines()
             for line in lines:
-                if "model name" in line:
-                    return line.split(":", 1)[1].strip()
+                if "model name" in line and not model:
+                    model = line.split(":", 1)[1].strip()
+                elif "vendor_id" in line and not vendor:
+                    vendor = line.split(":", 1)[1].strip()
+                elif "flags" in line or "Features" in line:
+                    flags = line.split(":", 1)[1].strip().split()
+                    if "vmx" in flags or "svm" in flags:
+                        virt_capable = "Enabled"
+                    elif virt_capable is None:
+                        virt_capable = "Disabled / Unsupported"
         except OSError:
-            return None
+            pass
+
+    return model, vendor, virt_capable
+
+
+def _get_cpu_max_freq() -> str | None:
+    """Read factory maximum CPU clock frequency."""
+    freq_path = "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"
+    val = _read_sysfs_file(freq_path)
+    if val and val.isdigit():
+        khz = int(val)
+        if khz >= 1000000:
+            return f"{round(khz / 1000000, 2)} GHz"
+        return f"{round(khz / 1000, 0):.0f} MHz"
     return None
 
 
@@ -116,13 +166,11 @@ def _get_primary_mac() -> str | None:
                 continue
 
             iface_name = interface_path.name
-            # Skip loopback and standard virtual/container bridges
             if iface_name == "lo" or iface_name.startswith(
                 ("veth", "docker", "hassio", "br-", "tailscale", "wg", "tun", "tap")
             ):
                 continue
 
-            # Ensure interface is linked to physical hardware
             device_path = interface_path / "device"
             if not device_path.exists():
                 continue
@@ -150,20 +198,37 @@ async def async_setup_entry(
         val = await hass.async_add_executor_job(_read_sysfs_file, path)
         sensors.append(SystemHardwareSensor(entry, key, val))
 
-    # CPU Model sensor
-    cpu_val = await hass.async_add_executor_job(_get_cpu_model)
-    sensors.append(SystemHardwareSensor(entry, KEY_CPU_MODEL, cpu_val))
+    # CPU info parsing
+    cpu_model, cpu_vendor, virt_capable = await hass.async_add_executor_job(
+        _get_cpu_info
+    )
+    sensors.append(SystemHardwareSensor(entry, KEY_CPU_MODEL, cpu_model))
+    sensors.append(SystemHardwareSensor(entry, KEY_CPU_VENDOR, cpu_vendor))
+    sensors.append(SystemHardwareSensor(entry, KEY_HARDWARE_VIRT, virt_capable))
 
-    # v1.1.0 Sensors
+    # BIOS Date formatted YYYY-MM-DD
+    bios_date = await hass.async_add_executor_job(_get_bios_date)
+    sensors.append(SystemHardwareSensor(entry, KEY_BIOS_DATE, bios_date))
+
+    # CPU Max Freq
+    max_freq = await hass.async_add_executor_job(_get_cpu_max_freq)
+    sensors.append(SystemHardwareSensor(entry, KEY_CPU_MAX_FREQ, max_freq))
+
+    # Kernel version
+    sensors.append(
+        SystemHardwareSensor(entry, KEY_KERNEL_VERSION, platform.release())
+    )
+
+    # Core count & Architecture
     cpu_cores = os.cpu_count()
     sensors.append(
         SystemHardwareSensor(
             entry, KEY_CPU_CORES, str(cpu_cores) if cpu_cores else None
         )
     )
-
     sensors.append(SystemHardwareSensor(entry, KEY_CPU_ARCH, platform.machine()))
 
+    # Memory, hypervisor, disk, MAC
     ram_val = await hass.async_add_executor_job(_get_total_ram)
     sensors.append(SystemHardwareSensor(entry, KEY_TOTAL_RAM, ram_val))
 
