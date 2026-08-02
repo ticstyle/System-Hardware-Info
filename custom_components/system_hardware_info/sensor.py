@@ -4,8 +4,8 @@
 from __future__ import annotations
 
 import os
-import platform
 from pathlib import Path
+import platform
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.core import HomeAssistant
@@ -105,14 +105,35 @@ def _get_boot_disk_model() -> str | None:
 
 
 def _get_primary_mac() -> str | None:
-    """Fetch MAC address of the primary network interface."""
+    """Fetch MAC address of the primary non-virtual network interface."""
     net_dir = Path("/sys/class/net")
-    if net_dir.exists():
-        for interface in ("eth0", "end0", "enp1s0"):
-            mac_path = net_dir / interface / "address"
+    if not (net_dir.exists() and os.access(net_dir, os.R_OK)):
+        return None
+
+    try:
+        for interface_path in net_dir.iterdir():
+            if not interface_path.is_dir():
+                continue
+
+            iface_name = interface_path.name
+            # Skip loopback and standard virtual/container bridges
+            if iface_name == "lo" or iface_name.startswith(
+                ("veth", "docker", "hassio", "br-", "tailscale", "wg", "tun", "tap")
+            ):
+                continue
+
+            # Ensure interface is linked to physical hardware
+            device_path = interface_path / "device"
+            if not device_path.exists():
+                continue
+
+            mac_path = interface_path / "address"
             val = _read_sysfs_file(str(mac_path))
-            if val:
+            if val and val != "00:00:00:00:00:00":
                 return val.upper()
+    except OSError:
+        return None
+
     return None
 
 
@@ -129,11 +150,11 @@ async def async_setup_entry(
         val = await hass.async_add_executor_job(_read_sysfs_file, path)
         sensors.append(SystemHardwareSensor(entry, key, val))
 
-    # Existing CPU Model sensor
+    # CPU Model sensor
     cpu_val = await hass.async_add_executor_job(_get_cpu_model)
     sensors.append(SystemHardwareSensor(entry, KEY_CPU_MODEL, cpu_val))
 
-    # New v1.1.0 Sensors
+    # v1.1.0 Sensors
     cpu_cores = os.cpu_count()
     sensors.append(
         SystemHardwareSensor(
