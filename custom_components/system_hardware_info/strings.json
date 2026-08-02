@@ -43,6 +43,9 @@
       "total_ram": {
         "name": "Total Installed RAM"
       },
+      "usable_ram": {
+        "name": "Usable System RAM"
+      },
       "hypervisor": {
         "name": "Virtualization Host"
       },

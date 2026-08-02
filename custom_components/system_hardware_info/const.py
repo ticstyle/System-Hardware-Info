@@ -7,23 +7,20 @@ DOMAIN: Final[str] = "system_hardware_info"
 MANUFACTURER: Final[str] = "ticstyle"
 DEFAULT_NAME: Final[str] = "System Hardware Info"
 
-# v1.0.0 Keys
+# Keys
 KEY_BOARD_NAME: Final[str] = "board_name"
 KEY_BOARD_VENDOR: Final[str] = "board_vendor"
 KEY_BIOS_VERSION: Final[str] = "bios_version"
 KEY_SYS_VENDOR: Final[str] = "sys_vendor"
 KEY_PRODUCT_NAME: Final[str] = "product_name"
 KEY_CPU_MODEL: Final[str] = "cpu_model"
-
-# v1.1.0 Keys
 KEY_CPU_CORES: Final[str] = "cpu_cores"
 KEY_CPU_ARCH: Final[str] = "cpu_arch"
 KEY_TOTAL_RAM: Final[str] = "total_ram"
+KEY_USABLE_RAM: Final[str] = "usable_ram"
 KEY_HYPERVISOR: Final[str] = "hypervisor"
 KEY_BOOT_DISK: Final[str] = "boot_disk_model"
 KEY_PRIMARY_MAC: Final[str] = "primary_mac"
-
-# v1.2.0 Keys
 KEY_BIOS_DATE: Final[str] = "bios_date"
 KEY_BOARD_VERSION: Final[str] = "board_version"
 KEY_CPU_VENDOR: Final[str] = "cpu_vendor"
