@@ -13,12 +13,12 @@
 [![Mypy](https://img.shields.io/github/actions/workflow/status/ticstyle/System-Hardware-Info/pipeline.yml?branch=main&job=mypy&label=Mypy)](https://github.com/ticstyle/System-Hardware-Info/actions/workflows/pipeline.yml)
 ![Installs](https://img.shields.io/badge/dynamic/json?color=41BDF5&logo=home-assistant&label=Known%20installs&url=https%3A%2F%2Fanalytics.home-assistant.io%2Fcustom_integrations.json&query=%24.System-Hardware-Info.total)
 
-A modern Home Assistant custom integration that automatically reads hardware specifications from Linux DMI/sysfs and exposes detailed system, motherboard, BIOS, physical storage, network, and CPU information directly inside Home Assistant.
+A modern Home Assistant custom integration that automatically reads hardware specifications from Linux DMI/sysfs and exposes detailed system, motherboard, BIOS, physical storage, GPU, PCI bus, network, and CPU information directly inside Home Assistant.
 
 To add this integration, please add the custom repository `https://github.com/ticstyle/System-Hardware-Info` to HACS in your Home Assistant setup.
 
 ## ✨ Features
-* **🖥️ Deep Hardware Discovery:** Safe, native parsing of Linux system interfaces (`/sys/class/dmi/id/*`, `/proc/cpuinfo`, and sysfs network/block devices) to pull physical host specs.
+* **🖥️ Deep Hardware Discovery:** Safe, native parsing of Linux system interfaces (`/sys/class/dmi/id/*`, `/proc/cpuinfo`, PCI bus, DRM devices, and sysfs network/block devices) to pull physical host specs.
 * **🔒 Privacy & Executor Safe:** Offloads file reading to background executor threads to ensure zero blocking calls in the Home Assistant event loop.
 * **🔍 Built-in Diagnostics:** Complete support for Home Assistant Diagnostics (`diagnostics.py`) to quickly copy hardware summaries with safe data isolation.
 * **⚡ Zero-Impact Polling:** Reads static host specifications on initial startup without wasting background CPU cycles.
@@ -47,15 +47,23 @@ Once configured, the integration automatically registers a device named **System
 | `sensor.system_hardware_info_cpu_cores` | CPU Cores | `6` | Total logical processor core count. |
 | `sensor.system_hardware_info_cpu_arch` | CPU Architecture | `x86_64` | Host system architecture (`x86_64`, `aarch64`, etc.). |
 | `sensor.system_hardware_info_cpu_max_freq` | CPU Max Frequency | `4.00 GHz` | Rated factory maximum processor clock speed. |
+| `sensor.system_hardware_info_cpu_cache_l3` | CPU L3 Cache Size | `9000 KB` | Level 3 hardware cache size embedded in processor. |
 | `sensor.system_hardware_info_hardware_virt` | Hardware Virtualization | `Enabled` | Checks for VT-x / AMD-V flag support (`vmx`/`svm`). |
-| `sensor.system_hardware_info_total_ram` | Total Installed RAM | `16.0 GB` | Total physical memory capacity installed on host. |
+| `sensor.system_hardware_info_total_ram` | Total Installed RAM | `16 GB` | Total physical memory capacity installed on host. |
+| `sensor.system_hardware_info_usable_ram` | Usable System RAM | `11.57 GB` | Usable physical memory pages available to the kernel. |
 | `sensor.system_hardware_info_board_name` | Motherboard | `PRIME Z370-A` | Motherboard model name from sysfs. |
 | `sensor.system_hardware_info_board_vendor` | Motherboard Vendor | `ASUSTeK COMPUTER INC.` | Motherboard manufacturer name from sysfs. |
 | `sensor.system_hardware_info_board_version` | Motherboard Revision | `Rev 1.02` | Revision or version identifier of motherboard. |
+| `sensor.system_hardware_info_motherboard_serial` | Motherboard Serial | `180321285002131` | Hardware serial number of the motherboard. |
 | `sensor.system_hardware_info_bios_version` | Motherboard BIOS version | `2401` | Active system BIOS/UEFI version string. |
 | `sensor.system_hardware_info_bios_date` | BIOS Date | `2024-04-18` | BIOS release date normalized strictly to `YYYY-MM-DD`. |
+| `sensor.system_hardware_info_boot_mode` | Boot Mode | `UEFI` or `Legacy BIOS` | Firmware boot environment detected on host. |
+| `sensor.system_hardware_info_gpu_model` | GPU Model | `Intel GPU (0x3e92)` | Integrated or dedicated graphics controller. |
+| `sensor.system_hardware_info_pci_devices_count` | PCI Devices Count | `18` | Count of physical devices enumerated on the PCI bus. |
+| `sensor.system_hardware_info_system_chassis` | Chassis Type | `Desktop` or `Rack Mount Chassis` | Enclosure form factor reported by DMI/SMBIOS. |
 | `sensor.system_hardware_info_hypervisor` | Virtualization Host | `Bare Metal` or `QEMU / KVM` | Detects hypervisor environment (Proxmox, VMware, Bare Metal, etc.). |
 | `sensor.system_hardware_info_boot_disk_model` | Boot Disk Model | `Samsung SSD 980 500GB` | Physical primary boot drive model name. |
+| `sensor.system_hardware_info_disk_bus_type` | Boot Disk Interface | `NVMe` or `SATA / SCSI` | Protocol interface used by primary boot storage. |
 | `sensor.system_hardware_info_primary_mac` | Primary MAC Address | `AA:BB:CC:DD:EE:FF` | Hardware MAC address of active primary network adapter. |
 | `sensor.system_hardware_info_sys_vendor` | System Vendor | `System manufacturer` | System enclosure / host vendor identifier. |
 | `sensor.system_hardware_info_product_name` | Product Name | `System Product Name` | Hardware product model identifier. |
@@ -75,13 +83,15 @@ title: "🖥️ Host Hardware Summary"
 content: >
   **CPU:** {{ states('sensor.system_hardware_info_cpu_model') }} ({{ states('sensor.system_hardware_info_cpu_cores') }} Cores, {{ states('sensor.system_hardware_info_cpu_arch') }})
   
-  **RAM:** {{ states('sensor.system_hardware_info_total_ram') }}
+  **RAM:** {{ states('sensor.system_hardware_info_total_ram') }} Installed ({{ states('sensor.system_hardware_info_usable_ram') }} Usable)
+  
+  **GPU:** {{ states('sensor.system_hardware_info_gpu_model') }}
   
   **Motherboard:** {{ states('sensor.system_hardware_info_board_vendor') }} {{ states('sensor.system_hardware_info_board_name') }}
   
-  **BIOS:** {{ states('sensor.system_hardware_info_bios_version') }} (Dated {{ states('sensor.system_hardware_info_bios_date') }})
+  **BIOS:** {{ states('sensor.system_hardware_info_bios_version') }} (Dated {{ states('sensor.system_hardware_info_bios_date') }}, {{ states('sensor.system_hardware_info_boot_mode') }})
   
-  **Virtualization:** {{ states('sensor.system_hardware_info_hypervisor') }}
+  **Environment:** {{ states('sensor.system_hardware_info_hypervisor') }} ({{ states('sensor.system_hardware_info_system_chassis') }})
 ```
 
 ### Example 2: Complete Hardware Spec Entities Card
@@ -98,6 +108,9 @@ entities:
   - entity: sensor.system_hardware_info_total_ram
     name: "Installed RAM"
     icon: mdi:memory
+  - entity: sensor.system_hardware_info_gpu_model
+    name: "Graphics"
+    icon: mdi:expansion-card
   - entity: sensor.system_hardware_info_board_name
     name: "Motherboard"
     icon: mdi:developer-board
