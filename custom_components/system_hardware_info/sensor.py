@@ -4,8 +4,8 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
 import platform
+from pathlib import Path
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.core import HomeAssistant
