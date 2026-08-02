@@ -3,10 +3,10 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
 import os
-from pathlib import Path
 import platform
+from datetime import UTC, datetime
+from pathlib import Path
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.core import HomeAssistant
@@ -19,7 +19,6 @@ from .const import (
     DEFAULT_NAME,
     DOMAIN,
     KEY_BIOS_DATE,
-    KEY_BIOS_VERSION,
     KEY_BOOT_DISK,
     KEY_BOOT_MODE,
     KEY_CPU_ARCH,
@@ -33,10 +32,8 @@ from .const import (
     KEY_HARDWARE_VIRT,
     KEY_HYPERVISOR,
     KEY_KERNEL_VERSION,
-    KEY_MOTHERBOARD_SERIAL,
     KEY_PCI_DEVICES_COUNT,
     KEY_PRIMARY_MAC,
-    KEY_PRODUCT_NAME,
     KEY_SYSTEM_CHASSIS,
     KEY_TOTAL_RAM,
     KEY_USABLE_RAM,
@@ -334,9 +331,7 @@ async def async_setup_entry(
     sensors.append(SystemHardwareSensor(entry, KEY_CPU_CACHE_L3, l3_cache))
 
     # Kernel & Boot mode
-    sensors.append(
-        SystemHardwareSensor(entry, KEY_KERNEL_VERSION, platform.release())
-    )
+    sensors.append(SystemHardwareSensor(entry, KEY_KERNEL_VERSION, platform.release()))
     boot_mode = await hass.async_add_executor_job(_get_boot_mode)
     sensors.append(SystemHardwareSensor(entry, KEY_BOOT_MODE, boot_mode))
 
