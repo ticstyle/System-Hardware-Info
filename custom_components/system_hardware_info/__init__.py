@@ -77,4 +77,3 @@ async def async_remove_config_entry_device(
 ) -> bool:
     """Remove a device entry when deleted by the user in the UI."""
     return True
-    
