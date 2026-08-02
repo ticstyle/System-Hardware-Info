@@ -20,20 +20,56 @@ from .const import (
     DOMAIN,
     KEY_BIOS_DATE,
     KEY_BOOT_DISK,
+    KEY_BOOT_MODE,
     KEY_CPU_ARCH,
+    KEY_CPU_CACHE_L3,
     KEY_CPU_CORES,
     KEY_CPU_MAX_FREQ,
     KEY_CPU_MODEL,
     KEY_CPU_VENDOR,
+    KEY_DISK_BUS_TYPE,
+    KEY_GPU_MODEL,
     KEY_HARDWARE_VIRT,
     KEY_HYPERVISOR,
     KEY_KERNEL_VERSION,
+    KEY_PCI_DEVICES_COUNT,
     KEY_PRIMARY_MAC,
+    KEY_SYSTEM_CHASSIS,
     KEY_TOTAL_RAM,
     KEY_USABLE_RAM,
     MANUFACTURER,
     SYSFS_PATHS,
 )
+
+CHASSIS_TYPES: dict[str, str] = {
+    "1": "Other",
+    "2": "Unknown",
+    "3": "Desktop",
+    "4": "Low Profile Desktop",
+    "5": "Pizza Box",
+    "6": "Mini Tower",
+    "7": "Tower",
+    "8": "Portable",
+    "9": "Laptop",
+    "10": "Notebook",
+    "11": "Hand Held",
+    "12": "Docking Station",
+    "13": "All in One",
+    "14": "Sub Notebook",
+    "15": "Space-saving",
+    "16": "Main Server Chassis",
+    "17": "Expansion Chassis",
+    "18": "SubChassis",
+    "19": "Bus Expansion Chassis",
+    "20": "Peripheral Chassis",
+    "21": "RAID Chassis",
+    "22": "Rack Mount Chassis",
+    "23": "Sealed-case PC",
+    "24": "Multi-system chassis",
+    "30": "Tablet",
+    "31": "Convertible",
+    "32": "Detachable",
+}
 
 
 def _read_sysfs_file(path_str: str) -> str | None:
@@ -54,7 +90,6 @@ def _get_bios_date() -> str | None:
     if not raw_date:
         return None
 
-    # Common SMBIOS formats: MM/DD/YYYY, MM/DD/YY, YYYY-MM-DD
     for fmt in ("%m/%d/%Y", "%m/%d/%y", "%Y-%m-%d"):
         try:
             parsed = datetime.strptime(raw_date, fmt).replace(tzinfo=UTC)
@@ -111,7 +146,6 @@ def _get_total_ram() -> str | None:
         page_size = os.sysconf("SC_PAGE_SIZE")
         if pages > 0 and page_size > 0:
             raw_gb = (pages * page_size) / (1024**3)
-            # Standard physical RAM module capacity sizes in GB
             standard_capacities = [1, 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 256]
             matched = min(standard_capacities, key=lambda x: abs(x - raw_gb))
             return f"{matched} GB"
@@ -154,19 +188,19 @@ def _get_hypervisor() -> str | None:
     return "Bare Metal"
 
 
-def _get_boot_disk_model() -> str | None:
-    """Identify the physical boot disk model."""
-    disk_paths = [
-        "/sys/block/nvme0n1/device/model",
-        "/sys/block/sda/device/model",
-        "/sys/block/vda/device/model",
-        "/sys/block/mmcblk0/device/name",
+def _get_boot_disk_info() -> tuple[str | None, str | None]:
+    """Identify boot disk model and interface bus type."""
+    disk_checks = [
+        ("/sys/block/nvme0n1/device/model", "NVMe"),
+        ("/sys/block/sda/device/model", "SATA / SCSI"),
+        ("/sys/block/vda/device/model", "VirtIO"),
+        ("/sys/block/mmcblk0/device/name", "eMMC / SD"),
     ]
-    for p in disk_paths:
-        val = _read_sysfs_file(p)
+    for path, bus in disk_checks:
+        val = _read_sysfs_file(path)
         if val:
-            return val
-    return None
+            return val, bus
+    return None, None
 
 
 def _get_primary_mac() -> str | None:
@@ -200,6 +234,70 @@ def _get_primary_mac() -> str | None:
     return None
 
 
+def _get_pci_count() -> str | None:
+    """Count physical PCI devices."""
+    pci_dir = Path("/sys/bus/pci/devices")
+    if pci_dir.exists() and os.access(pci_dir, os.R_OK):
+        try:
+            count = len(list(pci_dir.iterdir()))
+            return str(count)
+        except OSError:
+            return None
+    return None
+
+
+def _get_gpu_model() -> str | None:
+    """Identify GPU device model/vendor."""
+    drm_dir = Path("/sys/class/drm")
+    if drm_dir.exists() and os.access(drm_dir, os.R_OK):
+        try:
+            for card in drm_dir.glob("card[0-9]"):
+                vendor_path = card / "device" / "vendor"
+                device_path = card / "device" / "device"
+                vendor_id = _read_sysfs_file(str(vendor_path))
+                device_id = _read_sysfs_file(str(device_path))
+                if vendor_id and device_id:
+                    if "0x8086" in vendor_id:
+                        return f"Intel GPU ({device_id})"
+                    if "0x10de" in vendor_id:
+                        return f"NVIDIA GPU ({device_id})"
+                    if "0x1002" in vendor_id:
+                        return f"AMD GPU ({device_id})"
+                    return f"GPU ({vendor_id}:{device_id})"
+        except OSError:
+            return None
+    return None
+
+
+def _get_chassis_type() -> str | None:
+    """Read DMI chassis type string."""
+    code = _read_sysfs_file("/sys/class/dmi/id/chassis_type")
+    if code:
+        return CHASSIS_TYPES.get(code, f"Type {code}")
+    return None
+
+
+def _get_boot_mode() -> str | None:
+    """Detect if system booted in UEFI or Legacy BIOS mode."""
+    efi_dir = Path("/sys/firmware/efi")
+    if efi_dir.exists():
+        return "UEFI"
+    return "Legacy BIOS"
+
+
+def _get_cpu_l3_cache() -> str | None:
+    """Read L3 cache size of CPU 0."""
+    cache_dirs = Path("/sys/devices/system/cpu/cpu0/cache").glob("index*")
+    try:
+        for c in cache_dirs:
+            level = _read_sysfs_file(str(c / "level"))
+            if level == "3":
+                return _read_sysfs_file(str(c / "size"))
+    except OSError:
+        return None
+    return None
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: SystemHardwareConfigEntry,
@@ -225,12 +323,17 @@ async def async_setup_entry(
     bios_date = await hass.async_add_executor_job(_get_bios_date)
     sensors.append(SystemHardwareSensor(entry, KEY_BIOS_DATE, bios_date))
 
-    # CPU Max Freq
+    # CPU Max Freq & Cache
     max_freq = await hass.async_add_executor_job(_get_cpu_max_freq)
     sensors.append(SystemHardwareSensor(entry, KEY_CPU_MAX_FREQ, max_freq))
 
-    # Kernel version
+    l3_cache = await hass.async_add_executor_job(_get_cpu_l3_cache)
+    sensors.append(SystemHardwareSensor(entry, KEY_CPU_CACHE_L3, l3_cache))
+
+    # Kernel & Boot mode
     sensors.append(SystemHardwareSensor(entry, KEY_KERNEL_VERSION, platform.release()))
+    boot_mode = await hass.async_add_executor_job(_get_boot_mode)
+    sensors.append(SystemHardwareSensor(entry, KEY_BOOT_MODE, boot_mode))
 
     # Core count & Architecture
     cpu_cores = os.cpu_count()
@@ -252,11 +355,22 @@ async def async_setup_entry(
     hyp_val = await hass.async_add_executor_job(_get_hypervisor)
     sensors.append(SystemHardwareSensor(entry, KEY_HYPERVISOR, hyp_val))
 
-    disk_val = await hass.async_add_executor_job(_get_boot_disk_model)
+    disk_val, bus_val = await hass.async_add_executor_job(_get_boot_disk_info)
     sensors.append(SystemHardwareSensor(entry, KEY_BOOT_DISK, disk_val))
+    sensors.append(SystemHardwareSensor(entry, KEY_DISK_BUS_TYPE, bus_val))
 
     mac_val = await hass.async_add_executor_job(_get_primary_mac)
     sensors.append(SystemHardwareSensor(entry, KEY_PRIMARY_MAC, mac_val))
+
+    # v1.3.0 PCI, GPU, Chassis
+    pci_count = await hass.async_add_executor_job(_get_pci_count)
+    sensors.append(SystemHardwareSensor(entry, KEY_PCI_DEVICES_COUNT, pci_count))
+
+    gpu_val = await hass.async_add_executor_job(_get_gpu_model)
+    sensors.append(SystemHardwareSensor(entry, KEY_GPU_MODEL, gpu_val))
+
+    chassis_val = await hass.async_add_executor_job(_get_chassis_type)
+    sensors.append(SystemHardwareSensor(entry, KEY_SYSTEM_CHASSIS, chassis_val))
 
     async_add_entities(sensors)
 

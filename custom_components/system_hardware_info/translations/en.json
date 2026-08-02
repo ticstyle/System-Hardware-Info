@@ -75,6 +75,27 @@
       },
       "kernel_version": {
         "name": "Kernel Version"
+      },
+      "pci_devices_count": {
+        "name": "PCI Devices Count"
+      },
+      "gpu_model": {
+        "name": "GPU Model"
+      },
+      "system_chassis": {
+        "name": "Chassis Type"
+      },
+      "motherboard_serial": {
+        "name": "Motherboard Serial"
+      },
+      "disk_bus_type": {
+        "name": "Boot Disk Interface"
+      },
+      "boot_mode": {
+        "name": "Boot Mode"
+      },
+      "cpu_cache_l3": {
+        "name": "CPU L3 Cache Size"
       }
     }
   }
