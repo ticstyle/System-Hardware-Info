@@ -35,6 +35,7 @@ async def async_setup_entry(
         "cpu_cores",
         "cpu_arch",
         "total_ram",
+        "usable_ram",
         "hypervisor",
         "boot_disk_model",
         "primary_mac",
@@ -45,7 +46,13 @@ async def async_setup_entry(
         "hardware_virt",
         "product_family",
         "kernel_version",
-        "usable_ram",
+        "pci_devices_count",
+        "gpu_model",
+        "system_chassis",
+        "motherboard_serial",
+        "disk_bus_type",
+        "boot_mode",
+        "cpu_cache_l3",
     ]
     for entity in entries:
         if entity.unique_id.split("_")[-1] not in valid_keys:
@@ -70,3 +77,4 @@ async def async_remove_config_entry_device(
 ) -> bool:
     """Remove a device entry when deleted by the user in the UI."""
     return True
+    
