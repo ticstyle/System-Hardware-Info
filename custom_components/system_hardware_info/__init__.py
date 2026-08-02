@@ -45,6 +45,7 @@ async def async_setup_entry(
         "hardware_virt",
         "product_family",
         "kernel_version",
+        "usable_ram",
     ]
     for entity in entries:
         if entity.unique_id.split("_")[-1] not in valid_keys:
