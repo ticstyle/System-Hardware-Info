@@ -9,7 +9,6 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
-from homeassistant.helpers import entity_registry as er
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,41 +22,6 @@ async def async_setup_entry(
     entry: SystemHardwareConfigEntry,
 ) -> bool:
     """Set up System Hardware Info from a config entry."""
-    entity_reg = er.async_get(hass)
-    entries = er.async_entries_for_config_entry(entity_reg, entry.entry_id)
-    valid_keys = [
-        "board_name",
-        "board_vendor",
-        "bios_version",
-        "sys_vendor",
-        "product_name",
-        "cpu_model",
-        "cpu_cores",
-        "cpu_arch",
-        "total_ram",
-        "usable_ram",
-        "hypervisor",
-        "boot_disk_model",
-        "primary_mac",
-        "bios_date",
-        "board_version",
-        "cpu_vendor",
-        "cpu_max_freq",
-        "hardware_virt",
-        "product_family",
-        "kernel_version",
-        "pci_devices_count",
-        "gpu_model",
-        "system_chassis",
-        "motherboard_serial",
-        "disk_bus_type",
-        "boot_mode",
-        "cpu_cache_l3",
-    ]
-    for entity in entries:
-        if entity.unique_id.split("_")[-1] not in valid_keys:
-            entity_reg.async_remove(entity.entity_id)
-
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
